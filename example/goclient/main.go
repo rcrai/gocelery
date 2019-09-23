@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/gocelery/gocelery"
+	"dev.rcrai.com/rcrai/gocelery"
 )
 
 // Run Celery Worker First!
