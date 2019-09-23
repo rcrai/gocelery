@@ -102,6 +102,17 @@ func (cc *CeleryClient) FindResult(taskID string) *AsyncResult {
 	}
 }
 
+func (cc *CeleryClient) PollResults(handler func(interface{}), taskIDs ...string) {
+	for _, taskID := range taskIDs {
+		ar := cc.FindResult(taskID)
+		val, err := ar.AsyncGet()
+		if err != nil {
+			continue
+		}
+		handler(val)
+	}
+}
+
 // CeleryTask is an interface that represents actual task
 // Passing CeleryTask interface instead of function pointer
 // avoids reflection and may have performance gain.
