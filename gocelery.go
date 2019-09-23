@@ -95,12 +95,18 @@ func (cc *CeleryClient) delay(task *TaskMessage) (*AsyncResult, error) {
 	}, nil
 }
 
+func (cc *CeleryClient) FindResult(taskID string) *AsyncResult {
+	return &AsyncResult{
+		TaskID:  taskID,
+		backend: cc.backend,
+	}
+}
+
 // CeleryTask is an interface that represents actual task
 // Passing CeleryTask interface instead of function pointer
 // avoids reflection and may have performance gain.
 // ResultMessage must be obtained using GetResultMessage()
 type CeleryTask interface {
-
 	// ParseKwargs - define a method to parse kwargs
 	ParseKwargs(map[string]interface{}) error
 
@@ -164,5 +170,5 @@ func (ar *AsyncResult) Ready() (bool, error) {
 		return false, err
 	}
 	ar.result = val
-	return (val != nil), nil
+	return val != nil, nil
 }
