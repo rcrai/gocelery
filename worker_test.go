@@ -33,12 +33,6 @@ func TestWorkerRegisterTask(t *testing.T) {
 			backend:        redisBackend,
 			registeredTask: add,
 		},
-		{
-			name:           "register task with amqp broker/backend",
-			broker:         amqpBroker,
-			backend:        amqpBackend,
-			registeredTask: add,
-		},
 	}
 	for _, tc := range testCases {
 		celeryWorker := NewCeleryWorker(tc.broker, tc.backend, 1)
@@ -66,12 +60,6 @@ func TestWorkerRunTask(t *testing.T) {
 			name:           "run task with redis broker/backend",
 			broker:         redisBroker,
 			backend:        redisBackend,
-			registeredTask: add,
-		},
-		{
-			name:           "run task with amqp broker/backend",
-			broker:         amqpBroker,
-			backend:        amqpBackend,
 			registeredTask: add,
 		},
 	}
@@ -116,11 +104,6 @@ func TestWorkerNumWorkers(t *testing.T) {
 			broker:  redisBroker,
 			backend: redisBackend,
 		},
-		{
-			name:    "ensure correct number of workers with amqp broker/backend",
-			broker:  amqpBroker,
-			backend: amqpBackend,
-		},
 	}
 	for _, tc := range testCases {
 		numWorkers := rand.Intn(10)
@@ -145,11 +128,6 @@ func TestWorkerStartStop(t *testing.T) {
 			name:    "start and gracefully stop workers with redis broker/backend",
 			broker:  redisBroker,
 			backend: redisBackend,
-		},
-		{
-			name:    "start and gracefully stop workers with amqp broker/backend",
-			broker:  amqpBroker,
-			backend: amqpBackend,
 		},
 	}
 	for _, tc := range testCases {

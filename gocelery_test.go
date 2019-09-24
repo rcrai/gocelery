@@ -19,8 +19,6 @@ const TIMEOUT = 2 * time.Second
 var (
 	redisBroker  = NewRedisCeleryBroker("redis://", "")
 	redisBackend = NewRedisCeleryBackend("redis://")
-	amqpBroker   = NewAMQPCeleryBroker("amqp://")
-	amqpBackend  = NewAMQPCeleryBackend("amqp://")
 )
 
 // TestInteger tests successful function execution
@@ -40,16 +38,6 @@ func TestInteger(t *testing.T) {
 			name:     "integer addition with redis broker/backend",
 			broker:   redisBroker,
 			backend:  redisBackend,
-			taskName: uuid.Must(uuid.NewV4()).String(),
-			taskFunc: addInt,
-			inA:      2485,
-			inB:      6468,
-			expected: 8953,
-		},
-		{
-			name:     "integer addition with amqp broker/backend",
-			broker:   amqpBroker,
-			backend:  amqpBackend,
 			taskName: uuid.Must(uuid.NewV4()).String(),
 			taskFunc: addInt,
 			inA:      2485,
@@ -98,16 +86,6 @@ func TestIntegerNamedArguments(t *testing.T) {
 			name:     "integer addition (named arguments) with redis broker/backend",
 			broker:   redisBroker,
 			backend:  redisBackend,
-			taskName: uuid.Must(uuid.NewV4()).String(),
-			taskFunc: &addIntTask{},
-			inA:      2485,
-			inB:      6468,
-			expected: 8953,
-		},
-		{
-			name:     "integer addition (named arguments) with amqp broker/backend",
-			broker:   amqpBroker,
-			backend:  amqpBackend,
 			taskName: uuid.Must(uuid.NewV4()).String(),
 			taskFunc: &addIntTask{},
 			inA:      2485,
@@ -168,16 +146,6 @@ func TestString(t *testing.T) {
 			inB:      "world",
 			expected: "helloworld",
 		},
-		{
-			name:     "string addition with amqp broker/backend",
-			broker:   amqpBroker,
-			backend:  amqpBackend,
-			taskName: uuid.Must(uuid.NewV4()).String(),
-			taskFunc: addStr,
-			inA:      "hello",
-			inB:      "world",
-			expected: "helloworld",
-		},
 	}
 	for _, tc := range testCases {
 		cli, _ := NewCeleryClient(tc.broker, tc.backend, 1)
@@ -219,16 +187,6 @@ func TestStringNamedArguments(t *testing.T) {
 			name:     "string addition (named arguments) with redis broker/backend",
 			broker:   redisBroker,
 			backend:  redisBackend,
-			taskName: uuid.Must(uuid.NewV4()).String(),
-			taskFunc: &addStrTask{},
-			inA:      "hello",
-			inB:      "world",
-			expected: "helloworld",
-		},
-		{
-			name:     "string addition (named arguments) with amqp broker/backend",
-			broker:   amqpBroker,
-			backend:  amqpBackend,
 			taskName: uuid.Must(uuid.NewV4()).String(),
 			taskFunc: &addStrTask{},
 			inA:      "hello",
@@ -288,16 +246,6 @@ func TestStringInteger(t *testing.T) {
 			inB:      5,
 			expected: "hello5",
 		},
-		{
-			name:     "integer and string concatenation with amqp broker/backend",
-			broker:   amqpBroker,
-			backend:  amqpBackend,
-			taskName: uuid.Must(uuid.NewV4()).String(),
-			taskFunc: addStrInt,
-			inA:      "hello",
-			inB:      5,
-			expected: "hello5",
-		},
 	}
 	for _, tc := range testCases {
 		cli, _ := NewCeleryClient(tc.broker, tc.backend, 1)
@@ -339,16 +287,6 @@ func TestStringIntegerNamedArguments(t *testing.T) {
 			name:     "integer and string concatenation (named arguments) with redis broker/backend",
 			broker:   redisBroker,
 			backend:  redisBackend,
-			taskName: uuid.Must(uuid.NewV4()).String(),
-			taskFunc: &addStrIntTask{},
-			inA:      "hello",
-			inB:      5,
-			expected: "hello5",
-		},
-		{
-			name:     "integer and string concatenation (named arguments) with amqp broker/backend",
-			broker:   amqpBroker,
-			backend:  amqpBackend,
 			taskName: uuid.Must(uuid.NewV4()).String(),
 			taskFunc: &addStrIntTask{},
 			inA:      "hello",
@@ -408,16 +346,6 @@ func TestFloat(t *testing.T) {
 			inB:      5.3688,
 			expected: 8.8268,
 		},
-		{
-			name:     "float addition with amqp broker/backend",
-			broker:   amqpBroker,
-			backend:  amqpBackend,
-			taskName: uuid.Must(uuid.NewV4()).String(),
-			taskFunc: addFloat,
-			inA:      3.4580,
-			inB:      5.3688,
-			expected: 8.8268,
-		},
 	}
 	for _, tc := range testCases {
 		cli, _ := NewCeleryClient(tc.broker, tc.backend, 1)
@@ -459,16 +387,6 @@ func TestFloatNamedArguments(t *testing.T) {
 			name:     "float addition with redis broker/backend",
 			broker:   redisBroker,
 			backend:  redisBackend,
-			taskName: uuid.Must(uuid.NewV4()).String(),
-			taskFunc: &addFloatTask{},
-			inA:      3.4580,
-			inB:      5.3688,
-			expected: 8.8268,
-		},
-		{
-			name:     "float addition with amqp broker/backend",
-			broker:   amqpBroker,
-			backend:  amqpBackend,
 			taskName: uuid.Must(uuid.NewV4()).String(),
 			taskFunc: &addFloatTask{},
 			inA:      3.4580,
@@ -531,16 +449,6 @@ func TestFloat32(t *testing.T) {
 			inB:      5.3688,
 			expected: float32(8.8268),
 		},
-		{
-			name:     "float32 addition with amqp broker/backend",
-			broker:   amqpBroker,
-			backend:  amqpBackend,
-			taskName: uuid.Must(uuid.NewV4()).String(),
-			taskFunc: addFloat32,
-			inA:      3.4580,
-			inB:      5.3688,
-			expected: 8.8268,
-		},
 	}
 	for _, tc := range testCases {
 		cli, _ := NewCeleryClient(tc.broker, tc.backend, 1)
@@ -585,16 +493,6 @@ func TestFloat32NamedArguments(t *testing.T) {
 			name:     "float32 addition with redis broker/backend",
 			broker:   redisBroker,
 			backend:  redisBackend,
-			taskName: uuid.Must(uuid.NewV4()).String(),
-			taskFunc: &addFloat32Task{},
-			inA:      3.4580,
-			inB:      5.3688,
-			expected: float32(8.8268),
-		},
-		{
-			name:     "float32 addition with amqp broker/backend",
-			broker:   amqpBroker,
-			backend:  amqpBackend,
 			taskName: uuid.Must(uuid.NewV4()).String(),
 			taskFunc: &addFloat32Task{},
 			inA:      3.4580,
@@ -654,16 +552,6 @@ func TestBool(t *testing.T) {
 			inB:      false,
 			expected: false,
 		},
-		{
-			name:     "boolean and operation with amqp broker/backend",
-			broker:   amqpBroker,
-			backend:  amqpBackend,
-			taskName: uuid.Must(uuid.NewV4()).String(),
-			taskFunc: andBool,
-			inA:      true,
-			inB:      true,
-			expected: true,
-		},
 	}
 	for _, tc := range testCases {
 		cli, _ := NewCeleryClient(tc.broker, tc.backend, 1)
@@ -710,16 +598,6 @@ func TestBoolNamedArguments(t *testing.T) {
 			inA:      true,
 			inB:      false,
 			expected: false,
-		},
-		{
-			name:     "boolean and operation (named arguments) with amqp broker/backend",
-			broker:   amqpBroker,
-			backend:  amqpBackend,
-			taskName: uuid.Must(uuid.NewV4()).String(),
-			taskFunc: &andBoolTask{},
-			inA:      true,
-			inB:      true,
-			expected: true,
 		},
 	}
 	for _, tc := range testCases {
@@ -769,16 +647,6 @@ func TestArrayIntNamedArguments(t *testing.T) {
 			name:     "maximum array length (named arguments) with redis broker/backend",
 			broker:   redisBroker,
 			backend:  redisBackend,
-			taskName: uuid.Must(uuid.NewV4()).String(),
-			taskFunc: &maxArrLenTask{},
-			inA:      []string{"a", "b", "c", "d"},
-			inB:      []string{"e", "f", "g", "h"},
-			expected: 4,
-		},
-		{
-			name:     "maximum array length (named arguments) with amqp broker/backend",
-			broker:   amqpBroker,
-			backend:  amqpBackend,
 			taskName: uuid.Must(uuid.NewV4()).String(),
 			taskFunc: &maxArrLenTask{},
 			inA:      []string{"a", "b", "c", "d"},
@@ -839,16 +707,6 @@ func TestArray(t *testing.T) {
 			inB:      []string{"e", "f", "g", "h"},
 			expected: []string{"a", "b", "c", "d", "e", "f", "g", "h"},
 		},
-		{
-			name:     "array addition with amqp broker/backend",
-			broker:   amqpBroker,
-			backend:  amqpBackend,
-			taskName: uuid.Must(uuid.NewV4()).String(),
-			taskFunc: addArr,
-			inA:      []string{"a", "b", "c", "d"},
-			inB:      []string{"e", "f", "g", "h"},
-			expected: []string{"a", "b", "c", "d", "e", "f", "g", "h"},
-		},
 	}
 	for _, tc := range testCases {
 		cli, _ := NewCeleryClient(tc.broker, tc.backend, 1)
@@ -891,16 +749,6 @@ func TestMap(t *testing.T) {
 			name:     "integer addition with redis broker/backend",
 			broker:   redisBroker,
 			backend:  redisBackend,
-			taskName: uuid.Must(uuid.NewV4()).String(),
-			taskFunc: addMap,
-			inA:      map[string]string{"a": "a"},
-			inB:      map[string]string{"b": "b"},
-			expected: map[string]string{"a": "a", "b": "b"},
-		},
-		{
-			name:     "integer addition with amqp broker/backend",
-			broker:   amqpBroker,
-			backend:  amqpBackend,
 			taskName: uuid.Must(uuid.NewV4()).String(),
 			taskFunc: addMap,
 			inA:      map[string]string{"a": "a"},

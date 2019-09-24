@@ -127,10 +127,6 @@ func TestBrokerSendGet(t *testing.T) {
 			name:   "send/get task for redis broker",
 			broker: redisBroker,
 		},
-		{
-			name:   "send/get task for amqp broker",
-			broker: amqpBroker,
-		},
 	}
 	for _, tc := range testCases {
 		celeryMessage, err := makeCeleryMessage()

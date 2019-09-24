@@ -115,10 +115,6 @@ func TestBackendSetGetResult(t *testing.T) {
 			name:    "set/get result to redis backend",
 			backend: redisBackend,
 		},
-		{
-			name:    "set/get result to amqp backend",
-			backend: amqpBackend,
-		},
 	}
 	for _, tc := range testCases {
 		taskID := uuid.Must(uuid.NewV4()).String()
