@@ -6,6 +6,7 @@ package gocelery
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -74,6 +75,18 @@ func (cc *CeleryClient) Delay(task string, args ...interface{}) (*AsyncResult, e
 func (cc *CeleryClient) DelayKwargs(task string, args map[string]interface{}) (*AsyncResult, error) {
 	celeryTask := getTaskMessage(task)
 	celeryTask.Kwargs = args
+	return cc.delay(celeryTask)
+}
+
+// Marshal args as json
+func (cc *CeleryClient) DelayJSON(task string, input interface{}) (*AsyncResult, error) {
+	// marshal input as JSON
+	data, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	celeryTask := getTaskMessage(task)
+	celeryTask.Args = []interface{}{string(data)}
 	return cc.delay(celeryTask)
 }
 
