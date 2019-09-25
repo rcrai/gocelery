@@ -24,10 +24,9 @@ You can also use this library as pure go distributed task queue.
 
 ## Supported Brokers/Backends
 
-Now supporting both Redis and AMQP!!
+Now supporting both Redis ONLY!!
 
 * Redis (broker/backend)
-* AMQP (broker/backend) - does not allow concurrent use of channels
 
 ## Celery Configuration
 

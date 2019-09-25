@@ -6,6 +6,7 @@ package gocelery
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -23,6 +24,8 @@ type CeleryWorker struct {
 	cancel          context.CancelFunc
 	workWG          sync.WaitGroup
 	rateLimitPeriod time.Duration
+	isStarted       bool
+	startLock       sync.Mutex
 }
 
 // NewCeleryWorker returns new celery worker
@@ -33,11 +36,19 @@ func NewCeleryWorker(broker CeleryBroker, backend CeleryBackend, numWorkers int)
 		numWorkers:      numWorkers,
 		registeredTasks: map[string]interface{}{},
 		rateLimitPeriod: 100 * time.Millisecond,
+		isStarted:       false,
 	}
 }
 
 // StartWorkerWithContext starts celery worker(s) with given parent context
-func (w *CeleryWorker) StartWorkerWithContext(ctx context.Context) {
+func (w *CeleryWorker) StartWorkerWithContext(ctx context.Context) (err error) {
+	w.startLock.Lock()
+	defer w.startLock.Unlock()
+	if w.isStarted {
+		return errors.New("already started")
+	}
+	w.isStarted = true
+
 	var wctx context.Context
 	wctx, w.cancel = context.WithCancel(ctx)
 	w.workWG.Add(w.numWorkers)
@@ -74,17 +85,24 @@ func (w *CeleryWorker) StartWorkerWithContext(ctx context.Context) {
 			}
 		}(i)
 	}
+	return
 }
 
 // StartWorker starts celery workers
-func (w *CeleryWorker) StartWorker() {
-	w.StartWorkerWithContext(context.Background())
+func (w *CeleryWorker) StartWorker() error {
+	return w.StartWorkerWithContext(context.Background())
 }
 
 // StopWorker stops celery workers
-func (w *CeleryWorker) StopWorker() {
+func (w *CeleryWorker) StopWorker() (err error) {
+	w.startLock.Lock()
+	defer w.startLock.Unlock()
+	if !w.isStarted {
+		return errors.New("not started")
+	}
 	w.cancel()
 	w.workWG.Wait()
+	return
 }
 
 // StopWait waits for celery workers to terminate
@@ -107,12 +125,11 @@ func (w *CeleryWorker) Register(name string, task interface{}) {
 // GetTask retrieves registered task
 func (w *CeleryWorker) GetTask(name string) interface{} {
 	w.taskLock.RLock()
+	defer w.taskLock.RUnlock()
 	task, ok := w.registeredTasks[name]
 	if !ok {
-		w.taskLock.RUnlock()
 		return nil
 	}
-	w.taskLock.RUnlock()
 	return task
 }
 
