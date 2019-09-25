@@ -12,6 +12,8 @@ import (
 	"reflect"
 	"sync"
 	"time"
+
+	"github.com/argcv/stork/schd"
 )
 
 // CeleryWorker represents distributed task worker
@@ -21,98 +23,89 @@ type CeleryWorker struct {
 	numWorkers      int
 	registeredTasks map[string]interface{}
 	taskLock        sync.RWMutex
-	cancel          context.CancelFunc
-	workWG          sync.WaitGroup
-	rateLimitPeriod time.Duration
-	isStarted       bool
-	startLock       sync.Mutex
+	m               sync.Mutex
+	tt              *schd.MultiTaskTicker
 }
 
 // NewCeleryWorker returns new celery worker
 func NewCeleryWorker(broker CeleryBroker, backend CeleryBackend, numWorkers int) *CeleryWorker {
+	mtt := schd.NewMultiTaskTicker()
+	mtt.SetPeriod(100 * time.Millisecond)
+	mtt.SetNumWorkers(numWorkers)
 	return &CeleryWorker{
 		broker:          broker,
 		backend:         backend,
-		numWorkers:      numWorkers,
 		registeredTasks: map[string]interface{}{},
-		rateLimitPeriod: 100 * time.Millisecond,
-		isStarted:       false,
+		tt:              mtt,
 	}
 }
 
+func (w *CeleryWorker) SetRateLimitPeriod(rate time.Duration) *CeleryWorker {
+	w.tt.SetPeriod(rate)
+	return w
+}
+
 // StartWorkerWithContext starts celery worker(s) with given parent context
-func (w *CeleryWorker) StartWorkerWithContext(ctx context.Context) (err error) {
-	w.startLock.Lock()
-	defer w.startLock.Unlock()
-	if w.isStarted {
+func (w *CeleryWorker) StartWorkerWithContext(ctx context.Context, queues ...string) (err error) {
+	w.m.Lock()
+	defer w.m.Unlock()
+	if w.tt.IsStarted() {
 		return errors.New("already started")
 	}
-	w.isStarted = true
-
-	var wctx context.Context
-	wctx, w.cancel = context.WithCancel(ctx)
-	w.workWG.Add(w.numWorkers)
-	for i := 0; i < w.numWorkers; i++ {
-		go func(workerID int) {
-			defer w.workWG.Done()
-			ticker := time.NewTicker(w.rateLimitPeriod)
-			for {
-				select {
-				case <-wctx.Done():
-					return
-				case <-ticker.C:
-					// process task request
-					taskMessage, err := w.broker.GetTaskMessage()
-					if err != nil || taskMessage == nil {
-						continue
-					}
-
-					// run task
-					resultMsg, err := w.RunTask(taskMessage)
-					if err != nil {
-						log.Printf("failed to run task message %s: %+v", taskMessage.ID, err)
-						continue
-					}
-					defer releaseResultMessage(resultMsg)
-
-					// push result to backend
-					err = w.backend.SetResult(taskMessage.ID, resultMsg)
-					if err != nil {
-						log.Printf("failed to push result: %+v", err)
-						continue
-					}
-				}
-			}
-		}(i)
+	if len(queues) == 0 {
+		queues = w.broker.ListQueues()
 	}
+	w.tt.SetTasks()
+	for _, q := range queues {
+		w.tt.AddTask(q)
+	}
+	err = w.tt.Start(ctx, func(c context.Context, param interface{}) {
+		queue := param.(string)
+		taskMessage, err := w.broker.GetTaskMessageFrom(queue)
+		if err != nil || taskMessage == nil {
+			return
+		}
+
+		// run task
+		resultMsg, err := w.RunTask(taskMessage)
+		if err != nil {
+			log.Printf("failed to run task message %s: %+v", taskMessage.ID, err)
+			return
+		}
+		defer releaseResultMessage(resultMsg)
+
+		// push result to backend
+		err = w.backend.SetResult(taskMessage.ID, resultMsg)
+		if err != nil {
+			log.Printf("failed to push result: %+v", err)
+			return
+		}
+	})
 	return
 }
 
 // StartWorker starts celery workers
-func (w *CeleryWorker) StartWorker() error {
-	return w.StartWorkerWithContext(context.Background())
+func (w *CeleryWorker) StartWorker(queues ...string) error {
+	return w.StartWorkerWithContext(context.Background(), queues...)
+}
+
+func (w *CeleryWorker) StopWorkerWithContext(ctx context.Context) (err error) {
+	return w.tt.Stop(ctx)
 }
 
 // StopWorker stops celery workers
 func (w *CeleryWorker) StopWorker() (err error) {
-	w.startLock.Lock()
-	defer w.startLock.Unlock()
-	if !w.isStarted {
-		return errors.New("not started")
-	}
-	w.cancel()
-	w.workWG.Wait()
-	return
+	return w.StopWorkerWithContext(context.TODO())
 }
 
 // StopWait waits for celery workers to terminate
 func (w *CeleryWorker) StopWait() {
-	w.workWG.Wait()
+	w.tt.StopWait()
 }
 
 // GetNumWorkers returns number of currently running workers
 func (w *CeleryWorker) GetNumWorkers() int {
-	return w.numWorkers
+	return w.tt.GetNumWorkers()
 }
 
 // Register registers tasks (functions)

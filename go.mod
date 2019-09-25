@@ -3,6 +3,7 @@ module dev.rcrai.com/rcrai/gocelery
 go 1.13
 
 require (
+	github.com/argcv/stork v0.0.0-20190925090338-c4e2d017d64f
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
