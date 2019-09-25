@@ -21,7 +21,7 @@ type CeleryClient struct {
 // CeleryBroker is interface for celery broker database
 type CeleryBroker interface {
 	SendCeleryMessage(message *CeleryMessage) error
-	SendCeleryMessageTo(message *CeleryMessage, queue string) error
+	SendCeleryMessageTo(queue string, message *CeleryMessage) error
 	GetTaskMessage() (message *TaskMessage, error error) // must be non-blocking
 	GetTaskMessageFrom(queue string) (message *TaskMessage, error error)
 	ListQueues() []string
@@ -48,18 +48,18 @@ func (cc *CeleryClient) Register(name string, task interface{}) {
 }
 
 // StartWorkerWithContext starts celery workers with given parent context
-func (cc *CeleryClient) StartWorkerWithContext(ctx context.Context) {
-	cc.worker.StartWorkerWithContext(ctx)
+func (cc *CeleryClient) StartWorkerWithContext(ctx context.Context, queues ...string) (err error) {
+	return cc.worker.StartWorkerWithContext(ctx, queues...)
 }
 
 // StartWorker starts celery workers
-func (cc *CeleryClient) StartWorker() {
-	cc.worker.StartWorker()
+func (cc *CeleryClient) StartWorker(queues ...string) error {
+	return cc.worker.StartWorker(queues...)
 }
 
 // StopWorker stops celery workers
-func (cc *CeleryClient) StopWorker() {
-	cc.worker.StopWorker()
+func (cc *CeleryClient) StopWorker() (err error) {
+	return cc.worker.StopWorker()
 }
 
 // WaitForStopWorker waits for celery workers to terminate
@@ -91,6 +91,30 @@ func (cc *CeleryClient) DelayJSON(task string, input interface{}) (*AsyncResult,
 	return cc.Delay(task, string(data))
 }
 
+// Delay gets asynchronous result
+func (cc *CeleryClient) DelayTo(queue, task string, args ...interface{}) (*AsyncResult, error) {
+	celeryTask := getTaskMessage(task)
+	celeryTask.Args = args
+	return cc.delayTo(queue, celeryTask)
+}
+
+// DelayKwargs gets asynchronous results with argument map
+func (cc *CeleryClient) DelayKwargsTo(queue, task string, args map[string]interface{}) (*AsyncResult, error) {
+	celeryTask := getTaskMessage(task)
+	celeryTask.Kwargs = args
+	return cc.delayTo(queue, celeryTask)
+}
+
+// Marshal args as json
+func (cc *CeleryClient) DelayJSONTo(queue, task string, input interface{}) (*AsyncResult, error) {
+	// marshal input as JSON
+	data, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	return cc.DelayTo(queue, task, string(data))
+}
+
 func (cc *CeleryClient) delay(task *TaskMessage) (*AsyncResult, error) {
 	defer releaseTaskMessage(task)
 	encodedMessage, err := task.Encode()
@@ -109,7 +133,7 @@ func (cc *CeleryClient) delay(task *TaskMessage) (*AsyncResult, error) {
 	}, nil
 }
 
-func (cc *CeleryClient) delayTo(task *TaskMessage, queue string) (*AsyncResult, error) {
+func (cc *CeleryClient) delayTo(queue string, task *TaskMessage) (*AsyncResult, error) {
 	defer releaseTaskMessage(task)
 	encodedMessage, err := task.Encode()
 	if err != nil {
@@ -117,7 +141,7 @@ func (cc *CeleryClient) delayTo(task *TaskMessage, queue string) (*AsyncResult, 
 	}
 	celeryMessage := getCeleryMessage(encodedMessage)
 	defer releaseCeleryMessage(celeryMessage)
-	err = cc.broker.SendCeleryMessageTo(celeryMessage, queue)
+	err = cc.broker.SendCeleryMessageTo(queue, celeryMessage)
 	if err != nil {
 		return nil, err
 	}

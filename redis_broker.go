@@ -70,10 +70,10 @@ func NewRedisCeleryBroker(uri string, queues ...string) *RedisCeleryBroker {
 
 // SendCeleryMessage sends CeleryMessage to redis queue
 func (cb *RedisCeleryBroker) SendCeleryMessage(message *CeleryMessage) error {
-	return cb.SendCeleryMessageTo(message, cb.DefaultQueueName())
+	return cb.SendCeleryMessageTo(cb.DefaultQueueName(), message)
 }
 
-func (cb *RedisCeleryBroker) SendCeleryMessageTo(message *CeleryMessage, queue string) error {
+func (cb *RedisCeleryBroker) SendCeleryMessageTo(queue string, message *CeleryMessage) error {
 	jsonBytes, err := json.Marshal(message)
 	if err != nil {
 		return err
