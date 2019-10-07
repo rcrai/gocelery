@@ -91,7 +91,7 @@ func (cb *RedisCeleryBroker) SendCeleryMessageTo(queue string, message *CeleryMe
 func (cb *RedisCeleryBroker) GetCeleryMessage() (msg *CeleryMessage, err error) {
 	queues := cb.queues
 	lenQueues := len(queues)
-	for _ = range queues {
+	for range queues {
 		queue := queues[int(cb.next())%lenQueues]
 		msg, err = cb.GetCeleryMessageFrom(queue)
 		if err == nil {
