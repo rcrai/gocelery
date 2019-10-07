@@ -7,33 +7,15 @@ package gocelery
 import (
 	"encoding/json"
 	"fmt"
-	"sync/atomic"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
 )
 
-const (
-	DefaultQueueName = "celery"
-)
-
 // RedisCeleryBroker is celery broker for redis
 type RedisCeleryBroker struct {
 	*redis.Pool
-	queues []string
-	cQueue *int64
-}
-
-func (rb *RedisCeleryBroker) next() int64 {
-	return atomic.AddInt64(rb.cQueue, 1)
-}
-
-func (rb *RedisCeleryBroker) DefaultQueueName() string {
-	if len(rb.queues) > 0 {
-		return rb.queues[0]
-	} else {
-		return DefaultQueueName
-	}
+	*QueueIterator
 }
 
 // NewRedisPool creates pool of redis connections from given connection string
@@ -57,14 +39,9 @@ func NewRedisPool(uri string) *redis.Pool {
 
 // NewRedisCeleryBroker creates new RedisCeleryBroker based on given uri
 func NewRedisCeleryBroker(uri string, queues ...string) *RedisCeleryBroker {
-	if len(queues) == 0 {
-		queues = append(queues, DefaultQueueName)
-	}
-	base := int64(0)
 	return &RedisCeleryBroker{
-		Pool:   NewRedisPool(uri),
-		queues: queues,
-		cQueue: &base,
+		Pool:          NewRedisPool(uri),
+		QueueIterator: NewQueueIterator(queues...),
 	}
 }
 
@@ -89,10 +66,9 @@ func (cb *RedisCeleryBroker) SendCeleryMessageTo(queue string, message *CeleryMe
 
 // GetCeleryMessage retrieves celery message from redis queue
 func (cb *RedisCeleryBroker) GetCeleryMessage() (msg *CeleryMessage, err error) {
-	queues := cb.queues
-	lenQueues := len(queues)
-	for range queues {
-		queue := queues[int(cb.next())%lenQueues]
+	lenQueues := cb.Length()
+	for i := 0; i < lenQueues; i++ {
+		queue := cb.NextQueueName()
 		msg, err = cb.GetCeleryMessageFrom(queue)
 		if err == nil {
 			return msg, err
@@ -137,8 +113,4 @@ func (cb *RedisCeleryBroker) GetTaskMessageFrom(queue string) (*TaskMessage, err
 		return nil, err
 	}
 	return celeryMessage.GetTaskMessage(), nil
-}
-
-func (cb *RedisCeleryBroker) ListQueues() []string {
-	return append([]string{}, cb.queues...)
 }
