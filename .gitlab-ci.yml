@@ -1,0 +1,31 @@
+# 本 ci 将会尝试在 ci 中使用 docker。因此 image 不要变动
+# docker image 基于 alpine，安装命令为 apk add xxx
+# 可以自己开个容器试试。
+# 当然，有些环境下，我们也可以直接取某个特定的 image，这样可能可以省一点时间。
+# 我们也可以基于这个容器再预装一些程序，那样启动可以稍微快点。
+# 效率考虑，建议更新完脚本后，将本脚本复制到 https://dev.rcrai.com/rcrai/dealtape/-/ci/lint
+# 去做一下语法检查。它还会提供一些简单的自然语言说明。
+# 注意：如果是复制到别的地方，请不要上述的 ci lint 可能会有变动。
+image: rcrai/moa
+
+stages:
+  - build
+  - test
+  - notify
+
+mirror:
+  stage: notify
+  only:
+    variables:
+      - $GH_TOKEN
+  before_script:
+    - 'which git || apk add git'
+    - git branch
+    - echo $CI_COMMIT_REF_NAME
+    - echo $CI_COMMIT_SHA
+  tags:
+    - buildfarm
+    - hk
+  script:
+    - git push https://$GH_TOKEN@github.com/rcrai/$CI_PROJECT_NAME.git $CI_COMMIT_SHA:$CI_COMMIT_REF_NAME
+  allow_failure: true
