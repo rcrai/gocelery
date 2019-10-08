@@ -80,7 +80,7 @@ func (cb *RedisCeleryBroker) GetCeleryMessage() (msg *CeleryMessage, err error) 
 func (cb *RedisCeleryBroker) GetCeleryMessageFrom(queue string) (*CeleryMessage, error) {
 	conn := cb.Get()
 	defer conn.Close()
-	messageJSON, err := conn.Do("BLPOP", queue, "1")
+	messageJSON, err := conn.Do("BRPOP", queue, "1")
 	if err != nil {
 		return nil, err
 	}
