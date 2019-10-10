@@ -158,14 +158,15 @@ func (cc *CeleryClient) FindResult(taskID string) *AsyncResult {
 	}
 }
 
-func (cc *CeleryClient) PollResults(handler func(interface{}), taskIDs ...string) {
+// given 
+func (cc *CeleryClient) PollResults(handler func(string, interface{}), taskIDs ...string) {
 	for _, taskID := range taskIDs {
 		ar := cc.FindResult(taskID)
 		val, err := ar.AsyncGet()
 		if err != nil {
 			continue
 		}
-		handler(val)
+		handler(taskID, val)
 	}
 }
 
