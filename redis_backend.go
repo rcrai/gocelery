@@ -53,3 +53,10 @@ func (cb *RedisCeleryBackend) SetResult(taskID string, result *ResultMessage) er
 	_, err = conn.Do("SETEX", fmt.Sprintf("celery-task-meta-%s", taskID), 86400, resBytes)
 	return err
 }
+
+func (cb *RedisCeleryBackend) ClearResult(taskID string) error {
+	conn := cb.Get()
+	defer conn.Close()
+	_, err := conn.Do("DEL", fmt.Sprintf("celery-task-meta-%s", taskID))
+	return err
+}

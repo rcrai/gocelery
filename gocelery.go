@@ -31,6 +31,7 @@ type CeleryBroker interface {
 type CeleryBackend interface {
 	GetResult(string) (*ResultMessage, error) // must be non-blocking
 	SetResult(taskID string, result *ResultMessage) error
+	ClearResult(taskID string) error // one additional api
 }
 
 // NewCeleryClient creates new celery client
@@ -158,7 +159,14 @@ func (cc *CeleryClient) FindResult(taskID string) *AsyncResult {
 	}
 }
 
-// given 
+func (cc *CeleryClient) ClearResult(taskID string) error {
+	return AsyncResult{
+		TaskID:  taskID,
+		backend: cc.backend,
+	}.Clear()
+}
+
+// given
 func (cc *CeleryClient) PollResults(handler func(string, interface{}), taskIDs ...string) {
 	for _, taskID := range taskIDs {
 		ar := cc.FindResult(taskID)
@@ -239,4 +247,9 @@ func (ar *AsyncResult) Ready() (bool, error) {
 	}
 	ar.result = val
 	return val != nil, nil
+}
+
+func (ar *AsyncResult) Clear() (err error) {
+	err = ar.backend.ClearResult(ar.TaskID)
+	return
 }
