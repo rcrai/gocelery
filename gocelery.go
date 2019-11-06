@@ -160,10 +160,7 @@ func (cc *CeleryClient) FindResult(taskID string) *AsyncResult {
 }
 
 func (cc *CeleryClient) ClearResult(taskID string) error {
-	return AsyncResult{
-		TaskID:  taskID,
-		backend: cc.backend,
-	}.Clear()
+	return cc.FindResult(taskID).Clear()
 }
 
 // given
