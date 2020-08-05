@@ -184,6 +184,7 @@ type CeleryTask interface {
 	ParseKwargs(map[string]interface{}) error
 
 	// RunTask - define a method for execution
+
 	RunTask() (interface{}, error)
 }
 
