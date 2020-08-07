@@ -26,7 +26,7 @@ func TestBackendRedisGetResult(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		taskID := uuid.Must(uuid.NewV4()).String()
+		taskID := uuid.Must(uuid.NewV4(), nil).String()
 		// value must be float64 for testing due to json limitation
 		value := reflect.ValueOf(rand.Float64())
 		resultMessage := getReflectionResultMessage(&value)
@@ -69,7 +69,7 @@ func TestBackendRedisSetResult(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		taskID := uuid.Must(uuid.NewV4()).String()
+		taskID := uuid.Must(uuid.NewV4(), nil).String()
 		value := reflect.ValueOf(rand.Float64())
 		resultMessage := getReflectionResultMessage(&value)
 		err := tc.backend.SetResult(taskID, resultMessage)
@@ -117,7 +117,7 @@ func TestBackendSetGetResult(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		taskID := uuid.Must(uuid.NewV4()).String()
+		taskID := uuid.Must(uuid.NewV4(), nil).String()
 		value := reflect.ValueOf(rand.Float64())
 		resultMessage := getReflectionResultMessage(&value)
 		err := tc.backend.SetResult(taskID, resultMessage)

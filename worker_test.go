@@ -36,7 +36,7 @@ func TestWorkerRegisterTask(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		celeryWorker := NewCeleryWorker(tc.broker, tc.backend, 1)
-		taskName := uuid.Must(uuid.NewV4()).String()
+		taskName := uuid.Must(uuid.NewV4(), nil).String()
 		celeryWorker.Register(taskName, tc.registeredTask)
 		receivedTask := celeryWorker.GetTask(taskName)
 		if !reflect.DeepEqual(
@@ -65,7 +65,7 @@ func TestWorkerRunTask(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		celeryWorker := NewCeleryWorker(tc.broker, tc.backend, 1)
-		taskName := uuid.Must(uuid.NewV4()).String()
+		taskName := uuid.Must(uuid.NewV4(), nil).String()
 		celeryWorker.Register(taskName, tc.registeredTask)
 		args := []interface{}{
 			rand.Int(),
@@ -73,7 +73,7 @@ func TestWorkerRunTask(t *testing.T) {
 		}
 		res := add(args[0].(int), args[1].(int))
 		taskMessage := &TaskMessage{
-			ID:      uuid.Must(uuid.NewV4()).String(),
+			ID:      uuid.Must(uuid.NewV4(), nil).String(),
 			Task:    taskName,
 			Args:    args,
 			Kwargs:  nil,
